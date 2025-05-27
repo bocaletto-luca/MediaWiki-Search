@@ -1,7 +1,6 @@
 <?php
 // index.php
-// Questo file PHP serve come contenitore per l’app.
-// La logica di ricerca e visualizzazione è interamente gestita in HTML, CSS e JavaScript.
+// Questo file PHP funge da contenitore per l’app: la logica è tutta in HTML, CSS e JavaScript.
 ?>
 <!DOCTYPE html>
 <html lang="it">
@@ -9,7 +8,8 @@
   <meta charset="UTF-8">
   <title>MediaWiki Full Article Search App</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Bootstrap 5 CSS -->
+  
+  <!-- Includo Bootstrap 5 -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
   
   <style>
@@ -43,7 +43,7 @@
       margin-bottom: 30px;
     }
     
-    /* Risultati in stile card */
+    /* Card dei risultati */
     .result-item {
       margin-bottom: 20px;
       padding: 20px;
@@ -79,7 +79,7 @@
       margin-bottom: 15px;
     }
     
-    /* Modal: garantiamo uno scroll interno della modale se il contenuto è lungo */
+    /* Modal: garantire uno scroll interno se il contenuto è lungo */
     .modal-body {
       max-height: 70vh;
       overflow-y: auto;
@@ -108,12 +108,14 @@
   
   <!-- Contenitore principale -->
   <div class="container-main">
-    <!-- Form di ricerca -->
+    <!-- Form di Ricerca -->
     <form id="searchForm" class="mb-4">
       <div class="row g-3 align-items-center">
+        <!-- Termini di ricerca -->
         <div class="col-md-5">
           <input type="text" id="searchQuery" class="form-control" placeholder="Inserisci termine di ricerca..." required>
         </div>
+        <!-- Selezione lingua -->
         <div class="col-md-2">
           <select id="languageSelect" class="form-select">
             <option value="en" selected>English</option>
@@ -123,6 +125,7 @@
             <option value="es">Español</option>
           </select>
         </div>
+        <!-- Opzioni visualizzazione -->
         <div class="col-md-3">
           <div class="form-check">
             <input type="checkbox" id="showImages" class="form-check-input" checked>
@@ -137,6 +140,7 @@
             <label for="showText" class="form-check-label">Mostra Testo</label>
           </div>
         </div>
+        <!-- Bottone di ricerca -->
         <div class="col-md-2">
           <button type="submit" class="btn btn-primary w-100">Cerca</button>
         </div>
@@ -164,7 +168,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
         </div>
         <div class="modal-body" id="modalBodyContent">
-          <!-- Il contenuto completo verrà caricato qui -->
+          <!-- Il contenuto dell'articolo verrà caricato qui -->
         </div>
       </div>
     </div>
@@ -172,7 +176,7 @@
   
   <!-- Bootstrap Bundle JS (include Popper) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
+  
   <script>
     // Gestione del tema Day/Night
     const themeToggle = document.getElementById("themeToggle");
@@ -210,7 +214,7 @@
       performSearch(query, lang, showImages, showVideos, showText);
     });
     
-    // Funzione per eseguire la ricerca utilizzando l'API di Wikipedia
+    // Funzione per eseguire la ricerca usando l'API di Wikipedia tramite il metodo query (list=search)
     async function performSearch(keyword, lang, showImages, showVideos, showText) {
       resultContainer.innerHTML = '<div class="text-center"><div class="spinner-border spinner" role="status"><span class="visually-hidden">Caricamento...</span></div></div>';
       const searchUrl = `https://${lang}.wikipedia.org/w/api.php?origin=*&action=query&list=search&format=json&srsearch=${encodeURIComponent(keyword)}`;
@@ -239,7 +243,7 @@
       
       data.query.search.forEach(item => {
         const title = item.title;
-        const snippet = item.snippet; // spesso contiene tag HTML
+        const snippet = item.snippet; // snippet fornito dall'API, spesso contenente tag HTML
         let cardHTML = `<div class="result-item">
                           <h3>${escapeHtml(title)}</h3>
                           <p>${snippet}...</p>
@@ -249,13 +253,12 @@
       });
     }
     
-    // Funzione per caricare l’articolo completo tramite action=parse
+    // Funzione per caricare l'articolo completo tramite action=parse della MediaWiki API
     async function loadFullArticle(titleEncoded, lang, showImages, showVideos, showText) {
       const title = decodeURIComponent(titleEncoded);
       // Mostriamo subito la modale con un messaggio di caricamento
       openDetailModal(title, `<p class="text-center">Caricamento articolo completo...</p>`);
       
-      // Costruiamo l'URL dell'API MediaWiki per ottenere il contenuto completo (in formato HTML)
       const parseUrl = `https://${lang}.wikipedia.org/w/api.php?origin=*&action=parse&page=${encodeURIComponent(title)}&prop=text&format=json`;
       
       try {
@@ -266,7 +269,7 @@
         const data = await response.json();
         let articleHTML = data.parse.text["*"];
         
-        // In base alle opzioni, rimuoviamo elementi se richiesto
+        // Applichiamo le opzioni selezionate: se non si vogliono immagini o video, li rimuoviamo
         if (!showImages) {
           articleHTML = articleHTML.replace(/<img[\s\S]*?\/?>/gi, "");
         }
@@ -284,7 +287,7 @@
       }
     }
     
-    // Funzione per aprire la modale e mostrare il contenuto
+    // Funzione per aprire la modale e mostrare il contenuto passato
     function openDetailModal(title, contentHTML) {
       const modalTitle = document.getElementById("detailModalLabel");
       const modalBody = document.getElementById("modalBodyContent");
@@ -296,14 +299,26 @@
       detailModal.show();
     }
     
-    // Listener per pulire il contenuto della modale al momento della chiusura
+    // Listener per l'evento "hidden.bs.modal" per rimuovere eventuali residui
     const detailModalElem = document.getElementById("detailModal");
     detailModalElem.addEventListener("hidden.bs.modal", function () {
-      // Rimuoviamo il contenuto interno per prevenire errori grafici al successivo riapertura
+      // Pulizia del contenuto della modale
       document.getElementById("modalBodyContent").innerHTML = "";
+      // Rimozione forzata delle classi residue sul body
+      document.body.classList.remove("modal-open");
+      // Rimozione del backdrop residuo
+      const backdrops = document.getElementsByClassName("modal-backdrop");
+      while(backdrops[0]){
+        backdrops[0].parentNode.removeChild(backdrops[0]);
+      }
+      // Se l'istanza della modale esiste, la disfacciamo per evitare conflitti futuri
+      const modalInstance = bootstrap.Modal.getInstance(detailModalElem);
+      if(modalInstance) {
+        modalInstance.dispose();
+      }
     });
     
-    // Funzione per effettuare l'escape dei caratteri HTML (per prevenire XSS)
+    // Funzione per effettuare l'escape dei caratteri HTML per prevenire XSS
     function escapeHtml(text) {
       if (typeof text !== "string") return text;
       const map = {
