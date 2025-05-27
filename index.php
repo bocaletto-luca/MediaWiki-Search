@@ -1,6 +1,7 @@
 <?php
 // index.php
-// Questo file funge da contenitore; la logica avviene in HTML, CSS e JavaScript.
+// Questo file PHP serve come contenitore per l’app.
+// La logica di ricerca e visualizzazione è interamente gestita in HTML, CSS e JavaScript.
 ?>
 <!DOCTYPE html>
 <html lang="it">
@@ -8,8 +9,9 @@
   <meta charset="UTF-8">
   <title>MediaWiki Full Article Search App</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Includo Bootstrap 5 -->
+  <!-- Bootstrap 5 CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  
   <style>
     /* Temi Day / Night */
     body.day {
@@ -20,6 +22,7 @@
       background-color: #212529;
       color: #f8f9fa;
     }
+    
     /* Header e Footer */
     header, footer {
       background-color: #333;
@@ -27,17 +30,20 @@
       padding: 15px;
       text-align: center;
     }
+    
     /* Contenitore principale */
     .container-main {
       max-width: 960px;
       margin: 20px auto;
       padding: 15px;
     }
+    
     /* Form di ricerca */
     #searchForm {
       margin-bottom: 30px;
     }
-    /* Card dei risultati */
+    
+    /* Risultati in stile card */
     .result-item {
       margin-bottom: 20px;
       padding: 20px;
@@ -58,11 +64,13 @@
       margin-bottom: 15px;
       border-radius: 0.25rem;
     }
-    /* Spinner per il caricamento */
+    
+    /* Spinner */
     .spinner {
       margin: 50px auto;
       display: block;
     }
+    
     /* Messaggio di errore */
     #errorMessage {
       color: #d9534f;
@@ -70,10 +78,17 @@
       text-align: center;
       margin-bottom: 15px;
     }
-    /* Stili aggiuntivi per la modale (assicurare scroll interno) */
+    
+    /* Modal: garantiamo uno scroll interno della modale se il contenuto è lungo */
     .modal-body {
       max-height: 70vh;
       overflow-y: auto;
+    }
+    
+    /* Footer */
+    footer {
+      margin-top: 40px;
+      font-size: 0.9rem;
     }
   </style>
 </head>
@@ -96,11 +111,9 @@
     <!-- Form di ricerca -->
     <form id="searchForm" class="mb-4">
       <div class="row g-3 align-items-center">
-        <!-- Parola chiave -->
         <div class="col-md-5">
           <input type="text" id="searchQuery" class="form-control" placeholder="Inserisci termine di ricerca..." required>
         </div>
-        <!-- Selezione lingua -->
         <div class="col-md-2">
           <select id="languageSelect" class="form-select">
             <option value="en" selected>English</option>
@@ -110,22 +123,20 @@
             <option value="es">Español</option>
           </select>
         </div>
-        <!-- Opzioni visualizzazione -->
         <div class="col-md-3">
           <div class="form-check">
             <input type="checkbox" id="showImages" class="form-check-input" checked>
-            <label class="form-check-label" for="showImages">Mostra Immagini</label>
+            <label for="showImages" class="form-check-label">Mostra Immagini</label>
           </div>
           <div class="form-check">
             <input type="checkbox" id="showVideos" class="form-check-input" checked>
-            <label class="form-check-label" for="showVideos">Mostra Video</label>
+            <label for="showVideos" class="form-check-label">Mostra Video</label>
           </div>
           <div class="form-check">
             <input type="checkbox" id="showText" class="form-check-input" checked>
-            <label class="form-check-label" for="showText">Mostra Testo</label>
+            <label for="showText" class="form-check-label">Mostra Testo</label>
           </div>
         </div>
-        <!-- Bottone di ricerca -->
         <div class="col-md-2">
           <button type="submit" class="btn btn-primary w-100">Cerca</button>
         </div>
@@ -135,7 +146,7 @@
     <!-- Messaggio di errore -->
     <p id="errorMessage"></p>
     
-    <!-- Container dei risultati -->
+    <!-- Container per i risultati -->
     <div id="resultContainer"></div>
   </div>
   
@@ -144,26 +155,26 @@
     <p>&copy; <?php echo date("Y"); ?> MediaWiki Full Article Search App</p>
   </footer>
   
-  <!-- Modale per mostrare l'articolo completo -->
+  <!-- Modale per visualizzare l'articolo completo -->
   <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="detailModalLabel">Dettaglio Articolo</h5>
+          <h5 class="modal-title" id="detailModalLabel"></h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
         </div>
         <div class="modal-body" id="modalBodyContent">
-          <!-- Il contenuto verrà caricato qui -->
+          <!-- Il contenuto completo verrà caricato qui -->
         </div>
       </div>
     </div>
   </div>
   
-  <!-- Includo Bootstrap Bundle JS -->
+  <!-- Bootstrap Bundle JS (include Popper) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  
+
   <script>
-    // Funzione per passare da Day a Night
+    // Gestione del tema Day/Night
     const themeToggle = document.getElementById("themeToggle");
     const themeText = document.getElementById("themeText");
     themeToggle.addEventListener("change", () => {
@@ -199,11 +210,9 @@
       performSearch(query, lang, showImages, showVideos, showText);
     });
     
-    // Funzione per eseguire la ricerca (usa il metodo query con list=search)
+    // Funzione per eseguire la ricerca utilizzando l'API di Wikipedia
     async function performSearch(keyword, lang, showImages, showVideos, showText) {
       resultContainer.innerHTML = '<div class="text-center"><div class="spinner-border spinner" role="status"><span class="visually-hidden">Caricamento...</span></div></div>';
-      
-      // Utilizziamo l'endpoint di ricerca di Wikipedia (opensearch o query) – qui usiamo query per maggiori dettagli
       const searchUrl = `https://${lang}.wikipedia.org/w/api.php?origin=*&action=query&list=search&format=json&srsearch=${encodeURIComponent(keyword)}`;
       
       try {
@@ -220,7 +229,7 @@
       }
     }
     
-    // Funzione per mostrare i risultati della ricerca
+    // Funzione per visualizzare i risultati della ricerca
     function displaySearchResults(data, lang, showImages, showVideos, showText) {
       resultContainer.innerHTML = "";
       if (!data.query || !data.query.search || data.query.search.length === 0) {
@@ -230,7 +239,7 @@
       
       data.query.search.forEach(item => {
         const title = item.title;
-        const snippet = item.snippet;  // contiene già tag HTML (spesso formattati)
+        const snippet = item.snippet; // spesso contiene tag HTML
         let cardHTML = `<div class="result-item">
                           <h3>${escapeHtml(title)}</h3>
                           <p>${snippet}...</p>
@@ -240,13 +249,13 @@
       });
     }
     
-    // Funzione per caricare l'intero articolo tramite "action=parse"
+    // Funzione per caricare l’articolo completo tramite action=parse
     async function loadFullArticle(titleEncoded, lang, showImages, showVideos, showText) {
       const title = decodeURIComponent(titleEncoded);
       // Mostriamo subito la modale con un messaggio di caricamento
       openDetailModal(title, `<p class="text-center">Caricamento articolo completo...</p>`);
       
-      // Costruiamo l'URL dell'API di MediaWiki per ottenere il contenuto completo della pagina in formato HTML
+      // Costruiamo l'URL dell'API MediaWiki per ottenere il contenuto completo (in formato HTML)
       const parseUrl = `https://${lang}.wikipedia.org/w/api.php?origin=*&action=parse&page=${encodeURIComponent(title)}&prop=text&format=json`;
       
       try {
@@ -255,33 +264,27 @@
           throw new Error("Errore nel recupero dell'articolo");
         }
         const data = await response.json();
-        // data.parse.text["*"] contiene l'HTML completo della pagina
         let articleHTML = data.parse.text["*"];
         
-        // In base alle opzioni scelte, possiamo nascondere determinati elementi.
-        // Se showImages è false, nascondiamo i <img>
+        // In base alle opzioni, rimuoviamo elementi se richiesto
         if (!showImages) {
           articleHTML = articleHTML.replace(/<img[\s\S]*?\/?>/gi, "");
         }
-        // Se showVideos è false, nascondiamo iframe (molti video sono integrati come iframe)
         if (!showVideos) {
           articleHTML = articleHTML.replace(/<iframe[\s\S]*?<\/iframe>/gi, "");
         }
-        // Se showText è false, potremmo nascondere paragrafi, ma in questo caso l'utente vorrebbe forse vedere solo media.
-        // Per semplicità, se showText è false, rimuoviamo i paragrafi <p>
         if (!showText) {
           articleHTML = articleHTML.replace(/<p[\s\S]*?<\/p>/gi, "");
         }
         
-        // Aggiorniamo la modale con il contenuto completo formattato
         openDetailModal(title, articleHTML);
       } catch (error) {
         console.error(error);
-        openDetailModal(title, `<p class="text-center text-danger">Errore nel recupero dell'articolo.</p>`);
+        openDetailModal(title, `<p class="text-center text-danger">Errore nel recupero dell'articolo completo.</p>`);
       }
     }
     
-    // Funzione per aprire la modale e mostrare il contenuto passato
+    // Funzione per aprire la modale e mostrare il contenuto
     function openDetailModal(title, contentHTML) {
       const modalTitle = document.getElementById("detailModalLabel");
       const modalBody = document.getElementById("modalBodyContent");
@@ -293,7 +296,14 @@
       detailModal.show();
     }
     
-    // Funzione per l'escape HTML per prevenire XSS
+    // Listener per pulire il contenuto della modale al momento della chiusura
+    const detailModalElem = document.getElementById("detailModal");
+    detailModalElem.addEventListener("hidden.bs.modal", function () {
+      // Rimuoviamo il contenuto interno per prevenire errori grafici al successivo riapertura
+      document.getElementById("modalBodyContent").innerHTML = "";
+    });
+    
+    // Funzione per effettuare l'escape dei caratteri HTML (per prevenire XSS)
     function escapeHtml(text) {
       if (typeof text !== "string") return text;
       const map = {
